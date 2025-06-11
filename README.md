@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Aplicación Web React + Node.js
 
 Esta es una aplicación web simple que utiliza React para el frontend y Node.js con Express para el backend.
@@ -68,4 +67,3 @@ La aplicación frontend estará disponible en: http://localhost:3000
 - El frontend se ejecutará automáticamente en el puerto 3000
 =======
 # ObligatorioBD2
->>>>>>> f47cfe6ce6f369ece6fc389e25c0025ecc055dad
