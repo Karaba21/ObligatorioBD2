@@ -1,26 +1,35 @@
 import React, { useState } from "react";
 import "../Styles/LoginPage.css";
+import { Link } from "react-router-dom";
 
-const LoginMiembroMesa = () => {
+const MiembroMesaRegister = () => {
     const [ci, setCi] = useState("");
     const [password, setPassword] = useState("");
+    const [repeatPassword, setRepeatPassword] = useState("");
     const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState("");
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
-        setLoading(true);
+        setSuccess("");
 
-        if (!ci || !password) {
-            setError("Completa ambos campos.");
-            setLoading(false);
+        if (!ci || !password || !repeatPassword) {
+            setError("Completa todos los campos.");
+            return;
+        }
+        if (password !== repeatPassword) {
+            setError("Las contraseñas no coinciden.");
+            return;
+        }
+        if (password.length < 6) {
+            setError("La contraseña debe tener al menos 6 caracteres.");
             return;
         }
 
         try {
             const response = await fetch(
-                "http://localhost:5000/api/login",
+                "http://localhost:5000/api/register",
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -30,16 +39,17 @@ const LoginMiembroMesa = () => {
             const data = await response.json();
 
             if (data.success) {
-                alert("¡Bienvenido Miembro de Mesa!");
-                // Aquí puedes guardar el CI/token y redirigir
-                window.location.href = "/";
+                setSuccess(
+                    "Contraseña registrada correctamente. ¡Ya puedes iniciar sesión!"
+                );
+                setCi("");
+                setPassword("");
+                setRepeatPassword("");
             } else {
-                setError(data.message || "CI o contraseña incorrectos.");
+                setError(data.message || "Error al registrar la contraseña.");
             }
         } catch (err) {
             setError("Error de conexión con el servidor.");
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -47,7 +57,7 @@ const LoginMiembroMesa = () => {
         <div className="login-container">
             <div className="login-card">
                 <h2 className="login-title">
-                    Iniciar Sesión
+                    Registro de Contraseña
                     <br />
                     Miembro de Mesa
                 </h2>
@@ -58,7 +68,6 @@ const LoginMiembroMesa = () => {
                         id="ci"
                         value={ci}
                         onChange={(e) => setCi(e.target.value)}
-                        placeholder="Ingrese su cédula"
                     />
                     <label htmlFor="password">Contraseña</label>
                     <input
@@ -66,26 +75,29 @@ const LoginMiembroMesa = () => {
                         id="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Ingrese su contraseña"
+                    />
+                    <label htmlFor="repeatPassword">Repetir Contraseña</label>
+                    <input
+                        type="password"
+                        id="repeatPassword"
+                        value={repeatPassword}
+                        onChange={(e) => setRepeatPassword(e.target.value)}
                     />
                     {error && <div className="login-error">{error}</div>}
-                    <button
-                        type="submit"
-                        className="login-btn"
-                        disabled={loading}
-                    >
-                        {loading ? "Ingresando..." : "Iniciar Sesión"}
+                    {success && <div className="login-success">{success}</div>}
+                    <button type="submit" className="login-btn">
+                        Registrarse
                     </button>
                 </form>
                 <div className="login-bottom-card">
-                    ¿No tienes una cuenta?{" "}
-                    <a href="/registrar-miembro-mesa" className="login-link">
-                        Regístrate
-                    </a>
+                    ¿Ya tienes una cuenta?{" "}
+                    <Link to="/login" className="login-link">
+                        Inicia sesión
+                    </Link>
                 </div>
             </div>
         </div>
     );
 };
 
-export default LoginMiembroMesa;
+export default MiembroMesaRegister;

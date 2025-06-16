@@ -1,111 +1,60 @@
-import React from "react";
-import {
-    FaVoteYea,
-    FaChartBar,
-    FaShieldAlt,
-    FaUserCheck,
-} from "react-icons/fa";
-import "../Styles/HomePage.css";
+// import React, { useState } from "react";
+// import "../Styles/LoginPage.css";
 
-const HomePage = () => {
-    const activeVotings = [
-        { id: 1, title: "Elección de Representantes", daysLeft: 2 },
-        { id: 2, title: "Propuesta de Mejoras", daysLeft: 5 },
-    ];
+// const LoginPage = () => {
+//     const [cc, setCc] = useState("");
+//     const [error, setError] = useState("");
 
-    const features = [
-        {
-            id: 1,
-            icon: <FaShieldAlt className="feature-icon" />,
-            title: "Seguridad Garantizada",
-            description:
-                "Utilizamos tecnología blockchain para asegurar la integridad de cada voto.",
-        },
-        {
-            id: 2,
-            icon: <FaChartBar className="feature-icon" />,
-            title: "Transparencia Total",
-            description:
-                "Accede a resultados en tiempo real y verifica la autenticidad de cada votación.",
-        },
-        {
-            id: 3,
-            icon: <FaUserCheck className="feature-icon" />,
-            title: "Fácil de Usar",
-            description:
-                "Interfaz intuitiva que permite votar en pocos clics desde cualquier dispositivo.",
-        },
-    ];
+//     const handleSubmit = async (e) => {
+//         e.preventDefault();
+//         if (!cc) {
+//             setError("Por favor, ingrese su credencial cívica.");
+//             return;
+//         }
+//         setError("");
 
-    return (
-        <div className="home-container">
-            <nav className="navbar">
-                <div className="navbar-container">
-                    <div className="navbar-brand">
-                        <FaVoteYea className="brand-icon" />
-                        <span>Sistema de Votación</span>
-                    </div>
-                    <div className="navbar-links">
-                        <a href="#" className="active">
-                            Inicio
-                        </a>
-                        <a href="#">Votaciones Activas</a>
-                        <a href="#">Resultados</a>
-                        <a href="#">Iniciar Sesión</a>
-                    </div>
-                </div>
-            </nav>
+//         try {
+//             const response = await fetch("http://localhost:5000/api/login-votante", {
+//                 method: "POST",
+//                 headers: { "Content-Type": "application/json" },
+//                 body: JSON.stringify({ cc }),
+//             });
+//             const data = await response.json();
 
-            <main className="main-content">
-                <div className="hero-section">
-                    <div className="hero-content">
-                        <h1>Bienvenido al Sistema de Votación</h1>
-                        <p className="lead">
-                            Participa en las decisiones importantes de manera
-                            segura y transparente.
-                        </p>
-                        <div className="cta-buttons">
-                            <button className="btn-primary">Votar Ahora</button>
-                            <button className="btn-secondary">
-                                Ver Resultados
-                            </button>
-                        </div>
-                    </div>
-                    <div className="active-votings">
-                        <h2>Votaciones Activas</h2>
-                        <div className="voting-list">
-                            {activeVotings.map((voting) => (
-                                <div key={voting.id} className="voting-card">
-                                    <span className="voting-title">
-                                        {voting.title}
-                                    </span>
-                                    <span className="voting-days">
-                                        {voting.daysLeft} días
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+//             if (data.success) {
+//                 // Guardar la CC o token si lo necesitas
+//                 // Redirigir a la home page
+//                 window.location.href = "/"; // O usa navigate si usas react-router
+//             } else {
+//                 setError(data.message || "Credencial no registrada");
+//             }
+//         } catch (err) {
+//             setError("Error de conexión con el servidor");
+//         }
+//     };
 
-                <div className="features-section">
-                    {features.map((feature) => (
-                        <div key={feature.id} className="feature-card">
-                            {feature.icon}
-                            <h3>{feature.title}</h3>
-                            <p>{feature.description}</p>
-                        </div>
-                    ))}
-                </div>
-            </main>
+//     return (
+//         <div className="login-container">
+//             <div className="login-card">
+//                 <h2 className="login-title">Ingreso de Votante</h2>
+//                 <form onSubmit={handleSubmit}>
+//                     <label htmlFor="cc">Credencial Cívica</label>
+//                     <input
+//                         type="text"
+//                         id="cc"
+//                         value={cc}
+//                         onChange={(e) => setCc(e.target.value)}
+//                         placeholder="Ingrese su credencial cívica"
+//                         autoComplete="username"
+//                     />
+//                     {error && <div className="login-error">{error}</div>}
+//                     <button type="submit" className="login-btn">
+//                         Ingresar
+//                     </button>
+//                 </form>
+//             </div>
+//         </div>
+//     );
+// };
 
-            <footer className="footer">
-                <p>
-                    © 2024 Sistema de Votación. Todos los derechos reservados.
-                </p>
-            </footer>
-        </div>
-    );
-};
-
-export default HomePage;
+// export default LoginPage;
