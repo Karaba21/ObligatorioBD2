@@ -1,0 +1,160 @@
+.votar-container {
+  min-height: 100vh;
+  background: #e5e5e5;
+  padding: 32px 16px 90px 16px;
+  box-sizing: border-box;
+}
+
+.votar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.votar-header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.votar-cc {
+  font-size: 2rem;
+  color: #888;
+  font-weight: 500;
+}
+
+.votar-listas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px 24px;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.votar-lista-card, .votar-blanco-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  padding: 16px 16px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  min-width: 260px;
+  min-height: 180px;
+  transition: box-shadow 0.2s, border 0.2s;
+  border: 2.5px solid transparent;
+}
+
+.votar-lista-card.seleccionado, .votar-blanco-card.seleccionado {
+  border: 2.5px solid #2684ff;
+  box-shadow: 0 6px 24px rgba(38,132,255,0.10);
+}
+
+.votar-lista-img {
+  width: 220px;
+  height: 90px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: #f7f7f7;
+}
+
+.votar-lista-nombre {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.votar-checkbox {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 2.5px solid #bbb;
+  background: #f7f7f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border 0.2s, background 0.2s;
+}
+
+.votar-checkbox.checked {
+  border: 2.5px solid #27ae60;
+  background: #27ae60;
+}
+
+.votar-checkbox.checked::after {
+  content: '';
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.votar-blanco-card {
+  min-width: 320px;
+  min-height: 120px;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #222;
+  margin-top: 24px;
+  flex-direction: row;
+}
+
+.votar-blanco-text {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.votar-btn {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100vw;
+  background: #27ae60;
+  color: #fff;
+  border: none;
+  border-radius: 0;
+  padding: 22px 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  z-index: 100;
+}
+
+.votar-btn:hover {
+  background: #219150;
+}
+
+.votar-mensaje {
+  margin-top: 24px;
+  font-size: 1.2rem;
+  color: #27ae60;
+  text-align: center;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .votar-listas {
+    flex-direction: column;
+    gap: 24px;
+    align-items: center;
+  }
+  .votar-lista-card, .votar-blanco-card {
+    min-width: 90vw;
+    max-width: 98vw;
+  }
+} 
