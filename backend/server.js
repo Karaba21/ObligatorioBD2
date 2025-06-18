@@ -249,7 +249,7 @@ app.post('/api/login', async (req, res) => {
 
     try {
         // Busca el miembro de mesa por CI
-        const [rows] = await pool.query('SELECT * FROM MiembroMesa WHERE CI = ?', [ci]);
+        const [rows] = await pool.query('SELECT * FROM Presidente_de_Mesa WHERE CI = ?', [ci]);
         if (rows.length === 0) {
             return res.status(401).json({ success: false, message: 'CI o contraseña incorrectos.' });
         }
@@ -280,7 +280,7 @@ app.post('/api/register', async (req, res) => {
 
     try {
         // Verifica que exista el miembro de mesa
-        const [rows] = await pool.query('SELECT * FROM MiembroMesa WHERE CI = ?', [ci]);
+        const [rows] = await pool.query('SELECT * FROM Presidente_de_Mesa WHERE CI = ?', [ci]);
         if (rows.length === 0) {
             return res.status(404).json({ success: false, message: 'No existe un miembro de mesa con esa CI.' });
         }
@@ -289,7 +289,7 @@ app.post('/api/register', async (req, res) => {
         const hash = await bcrypt.hash(password, 10);
 
         // Actualiza la contraseña en la base de datos
-        await pool.query('UPDATE MiembroMesa SET Password = ? WHERE CI = ?', [hash, ci]);
+        await pool.query('UPDATE Presidente_de_Mesa SET Password = ? WHERE CI = ?', [hash, ci]);
 
         res.json({ success: true, message: 'Contraseña registrada correctamente.' });
     } catch (error) {
