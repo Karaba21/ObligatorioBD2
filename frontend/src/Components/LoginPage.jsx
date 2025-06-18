@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Navigate } from "react-router-dom";
 import "../Styles/LoginPage.css";
 import escudoSVG from '../assets/EscudoUruguay.svg';
 
@@ -21,7 +20,7 @@ const LoginMiembroMesa = () => {
         }
 
         try {
-            const response = await fetch("http://localhost:5000/api/login", {
+            const response = await fetch("http://localhost:5001/api/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ci, password }),
@@ -29,10 +28,7 @@ const LoginMiembroMesa = () => {
             const data = await response.json();
 
             if (data.success) {
-                alert("¡Bienvenido Miembro de Mesa!");
-                // Aquí puedes guardar el CI/token y redirigir
-                Navigate("/ccvotatnte");
-                window.location.href = "/";
+                window.location.href = "/votar";
             } else {
                 setError(data.message || "CI o contraseña incorrectos.");
             }
