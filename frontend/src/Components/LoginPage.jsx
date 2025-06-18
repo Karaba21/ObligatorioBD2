@@ -28,7 +28,7 @@ const LoginMiembroMesa = () => {
             const data = await response.json();
 
             if (data.success) {
-                window.location.href = "/votar";
+                window.location.href = "/buscar-votante";
             } else {
                 setError(data.message || "CI o contraseña incorrectos.");
             }
@@ -78,7 +78,7 @@ const LoginMiembroMesa = () => {
                     <div className="login-bottom-card">
                         ¿No tienes una cuenta?{" "}
                         <a
-                            href="/registrar-miembro-mesa"
+                            href="/register"
                             className="login-link"
                         >
                             Regístrate
