@@ -34,7 +34,7 @@ npm install
 npm run dev
 ```
 
-El servidor backend estará corriendo en: http://localhost:5000
+El servidor backend estará corriendo en: http://localhost:5001
 
 ### Frontend
 
@@ -63,7 +63,7 @@ La aplicación frontend estará disponible en: http://localhost:3000
 ## Notas
 
 - Asegúrate de tener ambos servidores (frontend y backend) corriendo simultáneamente
-- El backend debe estar corriendo en el puerto 5000
+- El backend debe estar corriendo en el puerto 5001
 - El frontend se ejecutará automáticamente en el puerto 3000
 =======
 # ObligatorioBD2
