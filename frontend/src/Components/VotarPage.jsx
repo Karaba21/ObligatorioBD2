@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import '../Styles/VotarPage.css';
 
 const listas = [
@@ -23,7 +23,19 @@ const listas = [
 const VotarPage = () => {
   const [seleccion, setSeleccion] = useState(null);
   const [mensaje, setMensaje] = useState('');
+  const [votante, setVotante] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Obtener datos del votante desde el estado de navegación
+    if (location.state?.votante) {
+      setVotante(location.state.votante);
+    } else {
+      // Si no hay datos del votante, redirigir a buscar votante
+      navigate('/buscar-votante');
+    }
+  }, [location.state, navigate]);
 
   const handleSeleccion = (id) => {
     setSeleccion(id);
@@ -35,19 +47,62 @@ const VotarPage = () => {
     setMensaje('');
   };
 
-  const handleIngresarVoto = () => {
+  const handleIngresarVoto = async () => {
     if (seleccion === null) {
       setMensaje('Por favor, seleccione una opción.');
       return;
     }
-    navigate('/voto-exito');
+
+    if (!votante) {
+      setMensaje('Error: No se encontraron datos del votante.');
+      return;
+    }
+
+    try {
+      // Marcar votante como que ya votó
+      const response = await fetch(`http://localhost:5001/api/votantes/${votante.CC}/marcar-votado`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          idEleccion: 1, // Por ahora hardcodeado, debería venir de la elección activa
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Navegar a la página de éxito
+        navigate('/voto-exito', { 
+          state: { 
+            votante: votante,
+            seleccion: seleccion 
+          } 
+        });
+      } else {
+        setMensaje(data.message || 'Error al registrar el voto.');
+      }
+    } catch (error) {
+      setMensaje('Error de conexión con el servidor.');
+    }
   };
+
+  if (!votante) {
+    return (
+      <div className="votar-container">
+        <div className="votar-header">
+          <h1>Cargando...</h1>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="votar-container">
       <div className="votar-header">
         <h1>Seleccionar Voto</h1>
-        <span className="votar-cc">CC: AKA - 150</span>
+        <span className="votar-cc">CC: {votante.CC}</span>
       </div>
       <div className="votar-listas">
         {listas.map((lista) => (
