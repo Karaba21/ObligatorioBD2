@@ -300,6 +300,15 @@ app.get('/api/recuento-votos', async (req, res) => {
             ORDER BY votos DESC
         `, [totalVotos]);
 
+        // Obtener votos en blanco
+        const [votosBlancoResult] = await pool.query(`
+            SELECT COUNT(*) as votos
+            FROM Voto 
+            WHERE Tipo = 2
+        `);
+        const votosBlanco = votosBlancoResult[0].votos;
+        const porcentajeBlanco = totalVotos > 0 ? ((votosBlanco / totalVotos) * 100).toFixed(1) : 0;
+
         // Mapear números de lista a nombres de partidos (hardcodeado por ahora)
         const mapeoPartidos = {
             1: 'PARTIDO NACIONAL',
@@ -315,6 +324,16 @@ app.get('/api/recuento-votos', async (req, res) => {
             votos: item.votos,
             porcentaje: parseFloat(item.porcentaje) || 0
         }));
+
+        // Agregar votos en blanco al final
+        if (votosBlanco > 0) {
+            votosFormateados.push({
+                numeroLista: null,
+                nombrePartido: 'VOTO EN BLANCO',
+                votos: votosBlanco,
+                porcentaje: parseFloat(porcentajeBlanco)
+            });
+        }
 
         res.json({
             success: true,
@@ -351,15 +370,6 @@ app.post('/api/registrar-voto', async (req, res) => {
             });
         }
 
-        // Verificar que la lista existe
-        const [listaRows] = await pool.query('SELECT * FROM Lista WHERE Numero_Lista = ?', [numeroLista]);
-        if (listaRows.length === 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Lista no válida' 
-            });
-        }
-
         // Verificar que el circuito existe
         const [circuitoRows] = await pool.query('SELECT * FROM Circuito WHERE Id = ?', [idCircuito]);
         if (circuitoRows.length === 0) {
@@ -385,11 +395,23 @@ app.post('/api/registrar-voto', async (req, res) => {
             });
         }
 
+        // Validar lista solo si NO es voto en blanco
+        if (tipoVoto !== 2 && numeroLista) {
+            const [listaRows] = await pool.query('SELECT * FROM Lista WHERE Numero_Lista = ?', [numeroLista]);
+            if (listaRows.length === 0) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Lista no válida' 
+                });
+            }
+        }
+
         // IMPORTANTE: Registrar el voto SIN vincular al votante (VOTO SECRETO)
+        // Para voto en blanco, numeroLista será NULL
         const [resultadoVoto] = await pool.query(`
             INSERT INTO Voto (Tipo, Numero_de_Lista, Circuito) 
             VALUES (?, ?, ?)
-        `, [tipoVoto, numeroLista, idCircuito]);
+        `, [tipoVoto, numeroLista || null, idCircuito]);
 
         // Actualizar el estado en VotaEn (solo que votó, NO qué votó)
         await pool.query(`
