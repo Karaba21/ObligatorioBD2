@@ -29,6 +29,8 @@ const LoginMiembroMesa = () => {
             const data = await response.json();
 
             if (data.success) {
+                localStorage.setItem("sesionIniciada", "true");
+                localStorage.setItem("ciPresidente", data.ci);
                 window.location.href = "/buscar-votante";
             } else {
                 setError(data.message || "CI o contraseña incorrectos.");

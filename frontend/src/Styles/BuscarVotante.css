@@ -1,191 +1,221 @@
 .buscarvotante-bg {
-  min-height: 100vh;
-  background: #d6d2d2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0;
+    min-height: 100vh;
+    background: #165bbd;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0;
 }
 
 .buscarvotante-barra {
-  width: 100vw;
-  background: #d6d2d2;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 24px 40px 0 0;
-  box-sizing: border-box;
+    width: 100vw;
+    background: #165bbd;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 24px 40px 0 0;
+    box-sizing: border-box;
 }
 
 .buscarvotante-sesion {
-  font-size: 2.3rem;
-  color: #888;
-  font-weight: 600;
-  margin-right: 18px;
+    font-size: 2.3rem;
+    color: #888;
+    font-weight: 600;
+    margin-right: 18px;
 }
 
 .buscarvotante-cerrar {
-  background: #8b1111;
-  color: #fff;
-  font-size: 1.2rem;
-  font-weight: 700;
-  border: none;
-  border-radius: 7px;
-  padding: 10px 28px;
-  cursor: pointer;
-  box-shadow: 2px 2px 6px #bdbdbd;
-  transition: background 0.2s;
+    background: #8b1111;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 7px;
+    padding: 10px 28px;
+    cursor: pointer;
+    box-shadow: 2px 2px 6px #bdbdbd;
+    transition: background 0.2s;
 }
 
 .buscarvotante-cerrar:hover {
-  background: #a91c1c;
+    background: #a91c1c;
 }
 
 .buscarvotante-card {
-  background: #fff;
-  border-radius: 24px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-  margin: 32px auto 0 auto;
-  padding: 48px 32px 48px 32px;
-  max-width: 1200px;
-  width: 90vw;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+    background: rgba(255, 255, 255, 0.6); /* Igual que el login */
+    border-radius: 24px;
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.15); /* Igual que el login */
+    margin: 32px auto 0 auto;
+    padding: 40px 32px;
+    max-width: 1000px;
+    min-width: 550px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
 }
 
 .buscarvotante-titulo {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 32px;
-  align-self: center;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 32px;
+    align-self: center;
 }
 
 .buscarvotante-label {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 12px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 12px;
 }
 
 .buscarvotante-input {
-  width: 100%;
-  font-size: 1.3rem;
-  padding: 18px 16px;
-  border-radius: 9px;
-  border: none;
-  background: #d6d6d6;
-  color: #888;
-  margin-bottom: 36px;
+    width: 100%;
+    font-size: 1.3rem;
+    padding: 18px 16px;
+    border-radius: 9px;
+    border: none;
+    background: #d6d6d6;
+    color: #888;
+    margin-bottom: 36px;
 }
 
 .buscarvotante-btn {
-  width: 100%;
-  background: #111a6b;
-  color: #fff;
-  font-size: 2rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 9px;
-  padding: 18px 0;
-  margin-top: 8px;
-  box-shadow: 2px 2px 8px #bdbdbd;
-  cursor: pointer;
-  transition: background 0.2s;
+    width: 100%;
+    background: #111a6b;
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 9px;
+    padding: 18px 0;
+    margin-top: 8px;
+    box-shadow: 2px 2px 8px #bdbdbd;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
 .buscarvotante-btn:hover:not(:disabled) {
-  background: #1a2a8a;
+    background: #1a2a8a;
 }
 
 .buscarvotante-btn:disabled {
-  background: #888;
-  cursor: not-allowed;
+    background: #888;
+    cursor: not-allowed;
 }
 
 .buscarvotante-error {
-  background: #ffebee;
-  color: #c62828;
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-top: 16px;
-  font-size: 1.1rem;
-  font-weight: 500;
-  border-left: 4px solid #c62828;
+    background: #ffebee;
+    color: #c62828;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-top: 16px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    border-left: 4px solid #c62828;
 }
 
 .buscarvotante-resultado {
-  background: #f5f5f5;
-  border-radius: 12px;
-  padding: 24px;
-  margin-top: 24px;
-  border: 2px solid #e0e0e0;
+    background: #f5f5f5;
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 24px;
+    border: 2px solid #e0e0e0;
 }
 
 .buscarvotante-resultado h3 {
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: #333;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #333;
 }
 
 .buscarvotante-resultado p {
-  font-size: 1.1rem;
-  margin-bottom: 8px;
-  color: #555;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    color: #555;
 }
 
 .buscarvotante-estado {
-  background: #fff;
-  padding: 16px;
-  border-radius: 8px;
-  margin: 16px 0;
-  border: 1px solid #ddd;
+    background: #fff;
+    padding: 16px;
+    border-radius: 8px;
+    margin: 16px 0;
+    border: 1px solid #ddd;
 }
 
 .ya-voto {
-  color: #d32f2f;
-  font-weight: 600;
+    color: #d32f2f;
+    font-weight: 600;
 }
 
 .no-voto {
-  color: #388e3c;
-  font-weight: 600;
+    color: #388e3c;
+    font-weight: 600;
 }
 
 .buscarvotante-ingresar-btn {
-  width: 100%;
-  background: #27ae60;
-  color: #fff;
-  font-size: 1.3rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  padding: 14px 0;
-  margin-top: 16px;
-  cursor: pointer;
-  transition: background 0.2s;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    width: 100%;
+    background: #27ae60;
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 0;
+    margin-top: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .buscarvotante-ingresar-btn:hover:not(:disabled) {
-  background: #219150;
+    background: #219150;
 }
 
 .buscarvotante-ingresar-btn:disabled {
-  background: #888;
-  cursor: not-allowed;
+    background: #888;
+    cursor: not-allowed;
+}
+
+.buscarvotante-circuito {
+    font-size: 1.2rem;
+    color: #222;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.buscarvotante-verificacion {
+    background: #fff;
+    padding: 16px;
+    border-radius: 8px;
+    margin: 16px 0;
+    border: 1px solid #ddd;
+}
+
+.circuito-correcto {
+    color: #388e3c;
+    font-weight: 600;
+}
+
+.circuito-incorrecto {
+    color: #d32f2f;
+    font-weight: 600;
 }
 
 @media (max-width: 900px) {
-  .buscarvotante-card {
-    padding: 24px 8px 24px 8px;
-    max-width: 98vw;
-  }
-  .buscarvotante-titulo {
-    font-size: 1.5rem;
-  }
-  .buscarvotante-sesion {
-    font-size: 1.2rem;
-  }
-} 
+    .buscarvotante-card {
+        padding: 24px 8px 24px 8px;
+        max-width: 98vw;
+    }
+
+    .buscarvotante-titulo {
+        font-size: 1.5rem;
+    }
+
+    .buscarvotante-sesion {
+        font-size: 1.2rem;
+    }
+}

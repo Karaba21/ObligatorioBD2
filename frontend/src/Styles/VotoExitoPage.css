@@ -1,115 +1,143 @@
 .exito-container {
-  min-height: 100vh;
-  background: #d6d2d2;
-  padding: 32px 16px 90px 16px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
+    min-height: 100vh;
+    background: #165bbd;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .exito-header {
-  width: 100%;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 24px;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
 }
 
 .exito-cc {
-  font-size: 2rem;
-  color: #888;
-  font-weight: 600;
+    font-size: 1.3rem;
+    color: #444;
+    font-weight: 500;
+    margin-bottom: 0;
+    text-align: center;
 }
 
+.exito-info-card {
+    background: #f8f9fa;
+    padding: 24px 32px;
+    border-radius: 16px;
+    border: 1.5px solid #e9ecef;
+    min-width: 320px;
+    font-size: 1.15rem;
+    color: #495057;
+    margin-bottom: 0.5em;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.exito-info-card strong {
+    color: #212529;
+}
 .exito-card {
-  width: 100%;
-  max-width: 1100px;
-  min-height: 400px;
-  background: #fff;
-  border-radius: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 32px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 24px;
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.15);
+    padding: 48px 32px 32px 32px;
+    max-width: 1100px;
+    width: 95vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    position: relative;
 }
 
 .exito-mensaje {
-  font-size: 2.5rem;
-  font-weight: 600;
-  color: #111;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
+    font-size: 2.2rem;
+    font-weight: 600;
+    color: #111;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
 }
 
 .exito-mensaje h2 {
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: #27ae60;
-  margin: 0;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #27ae60;
+    margin-bottom: 0.3em;
 }
 
-.exito-datos, .exito-seleccion, .exito-fecha {
-  background: #f8f9fa;
-  padding: 16px 24px;
-  border-radius: 12px;
-  border: 1px solid #e9ecef;
-  min-width: 300px;
+.exito-datos,
+.exito-seleccion,
+.exito-fecha {
+    background: #f8f9fa;
+    padding: 16px 24px;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    min-width: 300px;
 }
 
-.exito-datos p, .exito-seleccion p, .exito-fecha p {
-  font-size: 1.1rem;
-  margin: 8px 0;
-  color: #495057;
+.exito-datos p,
+.exito-seleccion p,
+.exito-fecha p {
+    font-size: 1.1rem;
+    margin: 8px 0;
+    color: #495057;
 }
 
-.exito-datos strong, .exito-seleccion strong, .exito-fecha strong {
-  color: #212529;
+.exito-datos strong,
+.exito-seleccion strong,
+.exito-fecha strong {
+    color: #212529;
 }
 
 .exito-seleccion {
-  background: #e8f5e8;
-  border-color: #27ae60;
+    background: #e8f5e8;
+    border-color: #27ae60;
 }
 
 .exito-fecha {
-  background: #f0f8ff;
-  border-color: #007bff;
+    background: #f0f8ff;
+    border-color: #007bff;
 }
 
 .exito-btn {
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  width: 100vw;
-  background: #5be111;
-  color: #fff;
-  border: none;
-  border-radius: 0 0 12px 12px;
-  padding: 22px 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s;
-  z-index: 100;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-top: 32px;
+    width: 100%;
+    background: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 18px 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+    align-self: stretch;
+    position: static;
 }
 
 .exito-btn:hover {
-  background: #4ac10e;
+    background: #219150;
 }
 
 @media (max-width: 900px) {
-  .exito-card {
-    min-height: 220px;
-    max-width: 98vw;
-  }
-  .exito-mensaje {
-    font-size: 1.3rem;
-  }
-} 
+    .exito-card {
+        min-height: 220px;
+        max-width: 98vw;
+    }
+
+    .exito-mensaje {
+        font-size: 1.3rem;
+    }
+}

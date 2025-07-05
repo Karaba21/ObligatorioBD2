@@ -59,6 +59,22 @@ app.get('/api/elecciones', async (req, res) => {
     }
 });
 
+// Obtener listas con información de partidos
+app.get('/api/listas', async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT l.Numero_Lista, l.Id_Partido, p.Nombre as NombrePartido, p.Sede
+            FROM Lista l
+            JOIN Partido p ON l.Id_Partido = p.Id
+            ORDER BY l.Numero_Lista
+        `);
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        console.error('Error al consultar listas:', error);
+        res.status(500).json({ success: false, error: 'Error al consultar listas' });
+    }
+});
+
 // Endpoint para consultar votantes con sus datos personales
 app.get('/api/votantes-detalle', async (req, res) => {
     try {
@@ -102,6 +118,39 @@ app.get('/api/debug/tablas', async (req, res) => {
     }
 });
 
+// ===== ENDPOINT PARA EXPLORAR TODAS LAS TABLAS =====
+app.get('/api/debug/all-tables', async (req, res) => {
+    try {
+        // Obtener todas las tablas de la base de datos
+        const [tables] = await pool.query('SHOW TABLES');
+        
+        const tableInfo = {};
+        
+        for (const table of tables) {
+            const tableName = Object.values(table)[0];
+            
+            // Obtener estructura de cada tabla
+            const [structure] = await pool.query(`DESCRIBE ${tableName}`);
+            
+            // Obtener algunos datos de ejemplo
+            const [data] = await pool.query(`SELECT * FROM ${tableName} LIMIT 3`);
+            
+            tableInfo[tableName] = {
+                structure,
+                data
+            };
+        }
+        
+        res.json({
+            success: true,
+            data: tableInfo
+        });
+    } catch (error) {
+        console.error('Error al explorar tablas:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // ===== APIs DE GESTIÓN DE VOTANTES =====
 
 // 1. Buscar votante por CC
@@ -110,9 +159,10 @@ app.get('/api/votantes/:cc', async (req, res) => {
     
     try {
         const [rows] = await pool.query(`
-            SELECT v.*, p.Nombre, p.Fecha_Nacimiento
+            SELECT v.*, p.Nombre, p.Fecha_Nacimiento, ve.Circuito as CircuitoAsignado
             FROM Votante v 
             JOIN Persona p ON v.CI = p.CI
+            LEFT JOIN VotaEn ve ON v.CC = ve.VotanteCC
             WHERE v.CC = ?
         `, [cc]);
         
@@ -141,47 +191,26 @@ app.get('/api/votantes/:cc/estado-voto', async (req, res) => {
     const { cc } = req.params;
     
     try {
-        // Primero verificamos que el votante existe
-        const [votanteRows] = await pool.query('SELECT * FROM Votante WHERE CC = ?', [cc]);
-        
-        if (votanteRows.length === 0) {
+        // Verificamos en la tabla VotaEn si el votante ya se presentó
+        const [rows] = await pool.query(`
+            SELECT Se_Presento, Hora_que_Voto
+            FROM VotaEn
+            WHERE VotanteCC = ?
+        `, [cc]);
+
+        if (rows.length === 0) {
             return res.status(404).json({ 
                 success: false, 
-                message: 'Votante no encontrado' 
+                message: 'No hay registro de circuito para este votante' 
             });
         }
-        
-        // Verificamos si ya votó (asumiendo que hay un campo YaVoto en la tabla Votante)
-        // Si no existe este campo, podemos verificar en la tabla de Votos
-        const votante = votanteRows[0];
-        
-        // Si existe el campo YaVoto, lo usamos directamente
-        if (votante.YaVoto !== undefined) {
-            return res.json({ 
-                success: true, 
-                data: {
-                    cc: votante.CC,
-                    yaVoto: Boolean(votante.YaVoto),
-                    fechaVoto: votante.FechaVoto || null
-                }
-            });
-        }
-        
-        // Si no existe el campo YaVoto, verificamos en la tabla de Votos
-        const [votoRows] = await pool.query(`
-            SELECT COUNT(*) as totalVotos 
-            FROM Voto 
-            WHERE CC_Votante = ?
-        `, [cc]);
-        
-        const yaVoto = votoRows[0].totalVotos > 0;
-        
+
         res.json({ 
             success: true, 
             data: {
-                cc: votante.CC,
-                yaVoto: yaVoto,
-                totalVotos: votoRows[0].totalVotos
+                cc: cc,
+                yaVoto: Boolean(rows[0].Se_Presento),
+                fechaVoto: rows[0].Hora_que_Voto || null
             }
         });
     } catch (error) {
@@ -199,33 +228,30 @@ app.put('/api/votantes/:cc/marcar-votado', async (req, res) => {
     const { idEleccion } = req.body; // Opcional: para especificar en qué elección votó
     
     try {
-        // Verificamos que el votante existe
-        const [votanteRows] = await pool.query('SELECT * FROM Votante WHERE CC = ?', [cc]);
-        
-        if (votanteRows.length === 0) {
+        // Verificamos que el registro exista en VotaEn
+        const [rows] = await pool.query('SELECT * FROM VotaEn WHERE VotanteCC = ?', [cc]);
+        if (rows.length === 0) {
             return res.status(404).json({ 
                 success: false, 
-                message: 'Votante no encontrado' 
+                message: 'No hay registro de circuito para este votante' 
             });
         }
-        
+
         // Verificamos que no haya votado ya
-        const votante = votanteRows[0];
-        
-        if (votante.YaVoto) {
+        if (rows[0].Se_Presento) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'El votante ya ha votado anteriormente' 
             });
         }
-        
-        // Actualizamos el estado del votante
+
+        // Actualizamos el estado en VotaEn
         await pool.query(`
-            UPDATE Votante 
-            SET YaVoto = 1, FechaVoto = NOW() 
-            WHERE CC = ?
+            UPDATE VotaEn
+            SET Se_Presento = 1, Hora_que_Voto = NOW()
+            WHERE VotanteCC = ?
         `, [cc]);
-        
+
         res.json({ 
             success: true, 
             message: 'Votante marcado como que ya votó',
@@ -295,6 +321,73 @@ app.post('/api/register', async (req, res) => {
     } catch (error) {
         console.error('Error al registrar contraseña de miembro de mesa:', error);
         res.status(500).json({ success: false, message: 'Error en el servidor.' });
+    }
+});
+
+app.get('/api/presidente/:ci', async (req, res) => {
+    const { ci } = req.params;
+    try {
+        const [rows] = await pool.query('SELECT * FROM Presidente_de_Mesa WHERE CI = ?', [ci]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Presidente no encontrado' });
+        }
+        res.json({ success: true, data: rows[0] });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error al buscar presidente' });
+    }
+});
+
+// Verificar si un votante está votando en el circuito correcto
+app.get('/api/votantes/:cc/verificar-circuito', async (req, res) => {
+    const { cc } = req.params;
+    const { circuitoPresidente } = req.query; // Circuito del presidente de mesa
+    
+    try {
+        // Buscar el votante y su circuito asignado
+        const [votanteRows] = await pool.query(`
+            SELECT v.*, p.Nombre, p.Fecha_Nacimiento, ve.Circuito as CircuitoAsignado
+            FROM Votante v 
+            JOIN Persona p ON v.CI = p.CI
+            LEFT JOIN VotaEn ve ON v.CC = ve.VotanteCC
+            WHERE v.CC = ?
+        `, [cc]);
+        
+        if (votanteRows.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Votante no encontrado' 
+            });
+        }
+        
+        const votante = votanteRows[0];
+        const circuitoAsignado = votante.CircuitoAsignado;
+        const circuitoActual = parseInt(circuitoPresidente);
+        
+        // Verificar si el votante está en el circuito correcto
+        const circuitoCorrecto = circuitoAsignado === circuitoActual;
+        
+        res.json({ 
+            success: true, 
+            data: {
+                votante: {
+                    CC: votante.CC,
+                    Nombre: votante.Nombre,
+                    Fecha_Nacimiento: votante.Fecha_Nacimiento
+                },
+                circuitoAsignado: circuitoAsignado,
+                circuitoActual: circuitoActual,
+                circuitoCorrecto: circuitoCorrecto,
+                mensaje: circuitoCorrecto 
+                    ? 'El votante está en el circuito correcto' 
+                    : 'El votante NO está en el circuito correcto'
+            }
+        });
+    } catch (error) {
+        console.error('Error al verificar circuito del votante:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error al verificar circuito del votante' 
+        });
     }
 });
 
