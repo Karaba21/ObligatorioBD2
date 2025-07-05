@@ -4,41 +4,16 @@ import "../Styles/VotoExitoPage.css";
 
 const VotoExitoPage = () => {
     const [votante, setVotante] = useState(null);
-    const [seleccion, setSeleccion] = useState(null);
-    const [listas, setListas] = useState([]);
+    const [votoRegistrado, setVotoRegistrado] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {
-        // Obtener datos del votante y selección desde el estado de navegación
+        // Obtener datos del votante desde el estado de navegación
         if (location.state?.votante) {
             setVotante(location.state.votante);
-            setSeleccion(location.state.seleccion);
+            setVotoRegistrado(location.state.votoRegistrado || false);
         }
-
-        // Cargar listas desde la base de datos
-        const cargarListas = async () => {
-            try {
-                const response = await fetch(
-                    "http://localhost:5001/api/listas"
-                );
-                const data = await response.json();
-
-                if (data.success) {
-                    const listasConLogos = data.data.map((lista) => ({
-                        id: lista.Numero_Lista,
-                        nombre: lista.NombrePartido,
-                        numeroLista: lista.Numero_Lista,
-                        partido: lista.NombrePartido,
-                    }));
-                    setListas(listasConLogos);
-                }
-            } catch (error) {
-                console.error("Error al cargar listas:", error);
-            }
-        };
-
-        cargarListas();
     }, [location.state]);
 
     const handleFinalizar = () => {
@@ -46,49 +21,32 @@ const VotoExitoPage = () => {
         navigate("/buscar-votante");
     };
 
-    const getNombreSeleccion = () => {
-        if (seleccion === "blanco") return "Voto en Blanco";
-
-        // Buscar en las listas cargadas desde la base de datos
-        const lista = listas.find((l) => l.id === seleccion);
-        return lista
-            ? `${lista.nombre} - Lista ${lista.numeroLista}`
-            : "Opción seleccionada";
-    };
-
     return (
         <div className="exito-container">
+            <div className="exito-header">
+                <span className="exito-cc">CC: {votante?.CC || "N/A"}</span>
+            </div>
             <div className="exito-card">
                 <div className="exito-mensaje">
                     <h2>¡Tu voto ha sido registrado con éxito!</h2>
-                    <span className="exito-cc">CC: {votante?.CC || "N/A"}</span>
-                    <div className="exito-info-card">
-                        {votante && (
-                            <>
-                                <p>
-                                    <strong>Votante:</strong> {votante.Nombre}
-                                </p>
-                                <p>
-                                    <strong>CC:</strong> {votante.CC}
-                                </p>
-                            </>
-                        )}
-                        {seleccion && (
-                            <p>
-                                <strong>Opción seleccionada:</strong>{" "}
-                                {getNombreSeleccion()}
-                            </p>
-                        )}
-                        <p>
-                            <strong>Hora de voto:</strong>{" "}
-                            {votante?.fechaVoto || "No disponible"}
-                        </p>
+                    {votante && (
+                        <div className="exito-datos">
+                            <p><strong>Votante:</strong> {votante.Nombre}</p>
+                            <p><strong>CC:</strong> {votante.CC}</p>
+                        </div>
+                    )}
+                    <div className="exito-seleccion">
+                        <p><strong>Estado:</strong> Voto registrado correctamente</p>
+                        <p><em>Tu voto es secreto y ha sido procesado de forma segura</em></p>
+                    </div>
+                    <div className="exito-fecha">
+                        <p><strong>Fecha y hora:</strong> {new Date().toLocaleString()}</p>
                     </div>
                 </div>
-                <button className="exito-btn" onClick={handleFinalizar}>
-                    Finalizar
-                </button>
             </div>
+            <button className="exito-btn" onClick={handleFinalizar}>
+                Finalizar
+            </button>
         </div>
     );
 };

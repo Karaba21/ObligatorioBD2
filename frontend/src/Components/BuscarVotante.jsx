@@ -30,6 +30,10 @@ const BuscarVotante = () => {
         navigate("/");
     };
 
+    const handleVerRecuento = () => {
+        navigate('/recuento-votos');
+    };
+
     const handleBuscarVotante = async () => {
         if (!cc.trim()) {
             setError("Por favor, ingrese una CC válida");
@@ -111,6 +115,12 @@ const BuscarVotante = () => {
                     onClick={handleCerrarSesion}
                 >
                     Cerrar Sesion
+                </button>
+                <button
+                    className="buscarvotante-recuento"
+                    onClick={handleVerRecuento}
+                >
+                    Ver Recuento
                 </button>
             </div>
             <div className="buscarvotante-card">

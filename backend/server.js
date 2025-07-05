@@ -270,6 +270,153 @@ app.put('/api/votantes/:cc/marcar-votado', async (req, res) => {
     }
 });
 
+// ===== ENDPOINT DE RECUENTO DE VOTOS =====
+
+// Recuento total de votos por lista
+app.get('/api/recuento-votos', async (req, res) => {
+    try {
+        // Obtener total de votantes
+        const [totalVotantesResult] = await pool.query('SELECT COUNT(*) as total FROM Votante');
+        const totalVotantes = totalVotantesResult[0].total;
+
+        // Obtener total de votos emitidos
+        const [totalVotosResult] = await pool.query('SELECT COUNT(*) as total FROM Voto');
+        const totalVotos = totalVotosResult[0].total;
+
+        // Calcular porcentaje de participación
+        const participacion = totalVotantes > 0 ? ((totalVotos / totalVotantes) * 100).toFixed(1) : 0;
+
+        // Obtener recuento por lista con información del partido
+        const [votosPorLista] = await pool.query(`
+            SELECT 
+                l.Numero_Lista,
+                p.Id as IdPartido,
+                COUNT(v.Id) as votos,
+                ROUND((COUNT(v.Id) / ?) * 100, 1) as porcentaje
+            FROM Lista l
+            LEFT JOIN Voto v ON l.Numero_Lista = v.Numero_de_Lista
+            LEFT JOIN Partido p ON l.Id_Partido = p.Id
+            GROUP BY l.Numero_Lista, p.Id
+            ORDER BY votos DESC
+        `, [totalVotos]);
+
+        // Mapear números de lista a nombres de partidos (hardcodeado por ahora)
+        const mapeoPartidos = {
+            1: 'PARTIDO NACIONAL',
+            2: 'CABILDO ABIERTO', 
+            3: 'FRENTE AMPLIO',
+            4: 'PARTIDO COLORADO',
+            5: 'PARTIDO INDEPENDIENTE'
+        };
+
+        const votosFormateados = votosPorLista.map(item => ({
+            numeroLista: item.Numero_Lista,
+            nombrePartido: mapeoPartidos[item.Numero_Lista] || `Lista ${item.Numero_Lista}`,
+            votos: item.votos,
+            porcentaje: parseFloat(item.porcentaje) || 0
+        }));
+
+        res.json({
+            success: true,
+            data: {
+                totalVotantes,
+                totalVotos,
+                participacion: parseFloat(participacion),
+                votosPorLista: votosFormateados,
+                ultimaActualizacion: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('Error al obtener recuento de votos:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error al obtener recuento de votos' 
+        });
+    }
+});
+
+// ===== ENDPOINT PARA REGISTRAR VOTO =====
+
+// Registrar un voto en la tabla Voto (VOTO SECRETO)
+app.post('/api/registrar-voto', async (req, res) => {
+    const { ccVotante, numeroLista, idCircuito, tipoVoto = 1 } = req.body;
+    
+    try {
+        // Verificar que el votante existe
+        const [votanteRows] = await pool.query('SELECT * FROM Votante WHERE CC = ?', [ccVotante]);
+        if (votanteRows.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Votante no encontrado' 
+            });
+        }
+
+        // Verificar que la lista existe
+        const [listaRows] = await pool.query('SELECT * FROM Lista WHERE Numero_Lista = ?', [numeroLista]);
+        if (listaRows.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Lista no válida' 
+            });
+        }
+
+        // Verificar que el circuito existe
+        const [circuitoRows] = await pool.query('SELECT * FROM Circuito WHERE Id = ?', [idCircuito]);
+        if (circuitoRows.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Circuito no válido' 
+            });
+        }
+
+        // Verificar que el votante no haya votado ya (usando VotaEn)
+        const [votaEnRows] = await pool.query('SELECT * FROM VotaEn WHERE VotanteCC = ? AND Circuito = ?', [ccVotante, idCircuito]);
+        if (votaEnRows.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'El votante no está registrado en este circuito' 
+            });
+        }
+
+        if (votaEnRows[0].Se_Presento) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'El votante ya ha votado anteriormente' 
+            });
+        }
+
+        // IMPORTANTE: Registrar el voto SIN vincular al votante (VOTO SECRETO)
+        const [resultadoVoto] = await pool.query(`
+            INSERT INTO Voto (Tipo, Numero_de_Lista, Circuito) 
+            VALUES (?, ?, ?)
+        `, [tipoVoto, numeroLista, idCircuito]);
+
+        // Actualizar el estado en VotaEn (solo que votó, NO qué votó)
+        await pool.query(`
+            UPDATE VotaEn 
+            SET Se_Presento = 1, Hora_que_Voto = NOW()
+            WHERE VotanteCC = ? AND Circuito = ?
+        `, [ccVotante, idCircuito]);
+
+        res.json({ 
+            success: true, 
+            message: 'Voto registrado correctamente',
+            data: {
+                idVoto: resultadoVoto.insertId,
+                // NO incluir ccVotante ni numeroLista en la respuesta
+                idCircuito,
+                fechaVoto: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('Error al registrar voto:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error al registrar voto' 
+        });
+    }
+});
+
 app.post('/api/login', async (req, res) => {
     const { ci, password } = req.body;
 
