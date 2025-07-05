@@ -68,54 +68,57 @@ const VotarPage = () => {
 
     const handleIngresarVoto = async () => {
         if (seleccion === null) {
-            setMensaje("Por favor, seleccione una opción.");
+            setMensaje('Por favor, seleccione una opción.');
             return;
         }
 
         if (!votante) {
-            setMensaje("Error: No se encontraron datos del votante.");
+            setMensaje('Error: No se encontraron datos del votante.');
             return;
         }
 
         try {
-            // Marcar votante como que ya votó
-            const response = await fetch(
-                `http://localhost:5001/api/votantes/${votante.CC}/marcar-votado`,
-                {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        idEleccion: 1, // Por ahora hardcodeado, debería venir de la elección activa
-                    }),
-                }
-            );
+            // Determinar el número de lista basado en la selección
+            let numeroLista;
+            let tipoVoto = 1; // Voto normal por defecto
+            
+            if (seleccion === 'blanco') {
+                numeroLista = null;
+                tipoVoto = 2; // Asumiendo que tipo 2 es voto en blanco
+            } else {
+                numeroLista = seleccion; // El ID de la lista seleccionada
+            }
+
+            // Registrar el voto
+            const response = await fetch('http://localhost:5001/api/registrar-voto', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ccVotante: votante.CC,
+                    numeroLista: numeroLista,
+                    idCircuito: 1, // Por ahora hardcodeado, debería venir del contexto
+                    tipoVoto: tipoVoto
+                }),
+            });
 
             const data = await response.json();
 
             if (data.success) {
-                // Obtener la hora real de la base de datos
-                const estadoResponse = await fetch(
-                    `http://localhost:5001/api/votantes/${votante.CC}/estado-voto`
-                );
-                const estadoData = await estadoResponse.json();
-            
-                // Navegar a la página de éxito con la hora real
-                navigate("/voto-exito", {
-                    state: {
-                        votante: {
-                            ...votante,
-                            fechaVoto: estadoData.data?.fechaVoto || null
-                        },
-                        seleccion: seleccion,
-                    },
+                // Navegar a la página de éxito SIN información del voto
+                navigate('/voto-exito', { 
+                    state: { 
+                        votante: votante,
+                        // NO incluir la selección para mantener el secreto del voto
+                        votoRegistrado: true
+                    } 
                 });
             } else {
-                setMensaje(data.message || "Error al registrar el voto.");
+                setMensaje(data.message || 'Error al registrar el voto.');
             }
         } catch (error) {
-            setMensaje("Error de conexión con el servidor.");
+            setMensaje('Error de conexión con el servidor.');
         }
     };
 
