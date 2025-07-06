@@ -90,67 +90,6 @@ app.get('/api/votantes-detalle', async (req, res) => {
     }
 });
 
-// ===== ENDPOINT DE PRUEBA PARA DEBUGGING =====
-app.get('/api/debug/tablas', async (req, res) => {
-    try {
-        // Ver estructura de tabla Votante
-        const [votanteStructure] = await pool.query('DESCRIBE Votante');
-
-        // Ver estructura de tabla Persona
-        const [personaStructure] = await pool.query('DESCRIBE Persona');
-
-        // Ver algunos datos de ejemplo
-        const [votantes] = await pool.query('SELECT * FROM Votante LIMIT 5');
-        const [personas] = await pool.query('SELECT * FROM Persona LIMIT 5');
-
-        res.json({
-            success: true,
-            data: {
-                votanteStructure,
-                personaStructure,
-                votantes,
-                personas
-            }
-        });
-    } catch (error) {
-        console.error('Error en debug:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// ===== ENDPOINT PARA EXPLORAR TODAS LAS TABLAS =====
-app.get('/api/debug/all-tables', async (req, res) => {
-    try {
-        // Obtener todas las tablas de la base de datos
-        const [tables] = await pool.query('SHOW TABLES');
-
-        const tableInfo = {};
-
-        for (const table of tables) {
-            const tableName = Object.values(table)[0];
-
-            // Obtener estructura de cada tabla
-            const [structure] = await pool.query(`DESCRIBE ${tableName}`);
-
-            // Obtener algunos datos de ejemplo
-            const [data] = await pool.query(`SELECT * FROM ${tableName} LIMIT 3`);
-
-            tableInfo[tableName] = {
-                structure,
-                data
-            };
-        }
-
-        res.json({
-            success: true,
-            data: tableInfo
-        });
-    } catch (error) {
-        console.error('Error al explorar tablas:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
 // ===== APIs DE GESTIÓN DE VOTANTES =====
 
 // 1. Buscar votante por CC
