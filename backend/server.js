@@ -90,7 +90,7 @@ app.get('/api/votantes-detalle', async (req, res) => {
     }
 });
 
-// ===== APIs DE GESTIÓN DE VOTANTES =====
+// ==== APIs DE GESTIÓN DE VOTANTES ====
 
 // 1. Buscar votante por CC
 app.get('/api/votantes/:cc', async (req, res) => {
