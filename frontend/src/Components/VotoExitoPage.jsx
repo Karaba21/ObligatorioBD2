@@ -4,26 +4,25 @@ import "../Styles/VotoExitoPage.css";
 
 const VotoExitoPage = () => {
     const [votante, setVotante] = useState(null);
-    const [seleccion, setSeleccion] = useState(null);
-    const [listas, setListas] = useState([]);
+    const [seleccion, setSeleccion] = useState([]); // <-- Agregado
+    const [listas, setListas] = useState([]);       // <-- Agregado
+    const [tipoVoto, setTipoVoto] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
-    const [tipoVoto, setTipoVoto] = useState(null);
 
     useEffect(() => {
-        // Obtener datos del votante y selección desde el estado de navegación
-        if (location.state?.votante) {
-            setVotante(location.state.votante);
-            setSeleccion(location.state.seleccion);
-            setTipoVoto(location.state.tipoVoto);
+        if (!location.state?.votante) {
+            navigate("/buscar-votante");
+            return;
         }
+        setVotante(location.state.votante);
+        setSeleccion(location.state.seleccion || []);
+        setTipoVoto(location.state.tipoVoto);
 
         // Cargar listas desde la base de datos
         const cargarListas = async () => {
             try {
-                const response = await fetch(
-                    "http://localhost:5001/api/listas"
-                );
+                const response = await fetch("http://localhost:5001/api/listas");
                 const data = await response.json();
 
                 if (data.success) {
@@ -41,10 +40,9 @@ const VotoExitoPage = () => {
         };
 
         cargarListas();
-    }, [location.state]);
+    }, [location.state, navigate]);
 
     const handleFinalizar = () => {
-        // Volver a la página de buscar votante para el siguiente votante
         navigate("/buscar-votante");
     };
 
@@ -66,28 +64,24 @@ const VotoExitoPage = () => {
                 <div className="exito-mensaje">
                     <h2>¡Tu voto ha sido registrado con éxito!</h2>
                     <span className="exito-cc">CC: {votante?.CC || "N/A"}</span>
-                    <div className="exito-info-card">
-                        {votante && (
-                            <>
-                                <p>
-                                    <strong>Votante:</strong> {votante.Nombre}
-                                </p>
-                                <p>
-                                    <strong>CC:</strong> {votante.CC}
-                                </p>
-                            </>
-                        )}
-                        {seleccion && (
+                </div>
+                <div className="exito-info-card">
+                    {votante && (
+                        <>
                             <p>
-                                <strong>Opción seleccionada:</strong>{" "}
-                                {getNombreSeleccion()}
+                                <strong>Votante:</strong> {votante.Nombre}
                             </p>
-                        )}
-                        <p>
-                            <strong>Hora de voto:</strong>{" "}
-                            {votante?.fechaVoto || "No disponible"}
-                        </p>
-                    </div>
+                            <p>
+                                <strong>CC:</strong> {votante.CC}
+                            </p>
+                        </>
+                    )}
+                    <p>
+                        <strong>Opción seleccionada:</strong> {getNombreSeleccion()}
+                    </p>
+                    <p>
+                        <strong>Hora de voto:</strong> {votante?.fechaVoto || "No disponible"}
+                    </p>
                 </div>
                 <button className="exito-btn" onClick={handleFinalizar}>
                     Finalizar
@@ -95,6 +89,6 @@ const VotoExitoPage = () => {
             </div>
         </div>
     );
-};
+}; 
 
 export default VotoExitoPage;

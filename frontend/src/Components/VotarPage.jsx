@@ -20,7 +20,6 @@ const VotarPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const votoObservado = location.state?.votoObservado ? 1 : 0;
-    const [tipoVoto, setTipoVoto] = useState(null);
 
     useEffect(() => {
         // Obtener datos del votante desde el estado de navegación
@@ -98,7 +97,7 @@ const VotarPage = () => {
         }
 
         if (!votante) {
-            setMensaje("Error: No se encontraron datos del votante.");
+            setMensaje('Error: No se encontraron datos del votante.');
             return;
         }
 
@@ -155,10 +154,10 @@ const VotarPage = () => {
                     },
                 });
             } else {
-                setMensaje(data.message || "Error al registrar el voto.");
+                setMensaje(data.message || 'Error al registrar el voto.');
             }
         } catch (error) {
-            setMensaje("Error de conexión con el servidor.");
+            setMensaje('Error de conexión con el servidor.');
         }
     };
 
