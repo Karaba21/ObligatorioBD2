@@ -8,12 +8,14 @@ const VotoExitoPage = () => {
     const [listas, setListas] = useState([]);
     const navigate = useNavigate();
     const location = useLocation();
+    const [tipoVoto, setTipoVoto] = useState(null);
 
     useEffect(() => {
         // Obtener datos del votante y selección desde el estado de navegación
         if (location.state?.votante) {
             setVotante(location.state.votante);
             setSeleccion(location.state.seleccion);
+            setTipoVoto(location.state.tipoVoto);
         }
 
         // Cargar listas desde la base de datos
@@ -47,13 +49,15 @@ const VotoExitoPage = () => {
     };
 
     const getNombreSeleccion = () => {
-        if (seleccion === "blanco") return "Voto en Blanco";
-
-        // Buscar en las listas cargadas desde la base de datos
-        const lista = listas.find((l) => l.id === seleccion);
-        return lista
-            ? `${lista.nombre} - Lista ${lista.numeroLista}`
-            : "Opción seleccionada";
+        if (tipoVoto === 3) return "Voto anulado";
+        if (seleccion.length === 1 && seleccion[0] === "blanco") return "Voto en Blanco";
+        if (seleccion.length === 1) {
+            const lista = listas.find((l) => l.id === seleccion[0]);
+            return lista
+                ? `${lista.nombre} - Lista ${lista.numeroLista}`
+                : "Opción seleccionada";
+        }
+        return "Opción seleccionada";
     };
 
     return (

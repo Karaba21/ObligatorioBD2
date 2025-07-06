@@ -20,6 +20,7 @@ const BuscarVotante = () => {
                 .then((data) => {
                     if (data.success) {
                         setCircuito(data.data.Circuito);
+                        localStorage.setItem("circuito", data.data.Circuito);
                     }
                 });
         }
@@ -90,6 +91,9 @@ const BuscarVotante = () => {
                 state: {
                     votante: votante,
                     cc: votante.CC,
+                    votoObservado:
+                        verificacionCircuito &&
+                        !verificacionCircuito.circuitoCorrecto,
                 },
             });
         } else if (estadoVoto?.yaVoto) {
@@ -215,17 +219,10 @@ const BuscarVotante = () => {
                         <button
                             className="buscarvotante-ingresar-btn"
                             onClick={handleIngresar}
-                            disabled={
-                                estadoVoto?.yaVoto ||
-                                (verificacionCircuito &&
-                                    !verificacionCircuito.circuitoCorrecto)
-                            }
+                            disabled={estadoVoto?.yaVoto}
                         >
                             {estadoVoto?.yaVoto
                                 ? "Ya Votó"
-                                : verificacionCircuito &&
-                                  !verificacionCircuito.circuitoCorrecto
-                                ? "Circuito Incorrecto"
                                 : "Ingresar a Votar"}
                         </button>
                     </div>

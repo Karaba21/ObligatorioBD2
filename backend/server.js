@@ -95,14 +95,14 @@ app.get('/api/debug/tablas', async (req, res) => {
     try {
         // Ver estructura de tabla Votante
         const [votanteStructure] = await pool.query('DESCRIBE Votante');
-        
+
         // Ver estructura de tabla Persona
         const [personaStructure] = await pool.query('DESCRIBE Persona');
-        
+
         // Ver algunos datos de ejemplo
         const [votantes] = await pool.query('SELECT * FROM Votante LIMIT 5');
         const [personas] = await pool.query('SELECT * FROM Persona LIMIT 5');
-        
+
         res.json({
             success: true,
             data: {
@@ -123,24 +123,24 @@ app.get('/api/debug/all-tables', async (req, res) => {
     try {
         // Obtener todas las tablas de la base de datos
         const [tables] = await pool.query('SHOW TABLES');
-        
+
         const tableInfo = {};
-        
+
         for (const table of tables) {
             const tableName = Object.values(table)[0];
-            
+
             // Obtener estructura de cada tabla
             const [structure] = await pool.query(`DESCRIBE ${tableName}`);
-            
+
             // Obtener algunos datos de ejemplo
             const [data] = await pool.query(`SELECT * FROM ${tableName} LIMIT 3`);
-            
+
             tableInfo[tableName] = {
                 structure,
                 data
             };
         }
-        
+
         res.json({
             success: true,
             data: tableInfo
@@ -156,7 +156,7 @@ app.get('/api/debug/all-tables', async (req, res) => {
 // 1. Buscar votante por CC
 app.get('/api/votantes/:cc', async (req, res) => {
     const { cc } = req.params;
-    
+
     try {
         const [rows] = await pool.query(`
             SELECT v.*, p.Nombre, p.Fecha_Nacimiento, ve.Circuito as CircuitoAsignado
@@ -165,23 +165,23 @@ app.get('/api/votantes/:cc', async (req, res) => {
             LEFT JOIN VotaEn ve ON v.CC = ve.VotanteCC
             WHERE v.CC = ?
         `, [cc]);
-        
+
         if (rows.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Votante no encontrado' 
+            return res.status(404).json({
+                success: false,
+                message: 'Votante no encontrado'
             });
         }
-        
-        res.json({ 
-            success: true, 
-            data: rows[0] 
+
+        res.json({
+            success: true,
+            data: rows[0]
         });
     } catch (error) {
         console.error('Error al buscar votante:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Error al buscar votante' 
+        res.status(500).json({
+            success: false,
+            error: 'Error al buscar votante'
         });
     }
 });
@@ -189,7 +189,7 @@ app.get('/api/votantes/:cc', async (req, res) => {
 // 2. Verificar si un votante ya votó
 app.get('/api/votantes/:cc/estado-voto', async (req, res) => {
     const { cc } = req.params;
-    
+
     try {
         // Verificamos en la tabla VotaEn si el votante ya se presentó
         const [rows] = await pool.query(`
@@ -199,14 +199,14 @@ app.get('/api/votantes/:cc/estado-voto', async (req, res) => {
         `, [cc]);
 
         if (rows.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'No hay registro de circuito para este votante' 
+            return res.status(404).json({
+                success: false,
+                message: 'No hay registro de circuito para este votante'
             });
         }
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             data: {
                 cc: cc,
                 yaVoto: Boolean(rows[0].Se_Presento),
@@ -215,9 +215,9 @@ app.get('/api/votantes/:cc/estado-voto', async (req, res) => {
         });
     } catch (error) {
         console.error('Error al verificar estado de voto:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Error al verificar estado de voto' 
+        res.status(500).json({
+            success: false,
+            error: 'Error al verificar estado de voto'
         });
     }
 });
@@ -225,35 +225,71 @@ app.get('/api/votantes/:cc/estado-voto', async (req, res) => {
 // 3. Marcar votante como que ya votó
 app.put('/api/votantes/:cc/marcar-votado', async (req, res) => {
     const { cc } = req.params;
-    const { idEleccion } = req.body; // Opcional: para especificar en qué elección votó
-    
+    let { idEleccion, votoObservado, tipoVoto, numeroLista, circuito } = req.body;
+
     try {
-        // Verificamos que el registro exista en VotaEn
+        // 1. Obtener la CI del votante
+        const [votanteRows] = await pool.query('SELECT CI FROM Votante WHERE CC = ?', [cc]);
+        if (votanteRows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Votante no encontrado' });
+        }
+        const ciVotante = votanteRows[0].CI;
+
+        // 2. Consultar si es miembro de mesa
+        const [miembroRows] = await pool.query('SELECT * FROM MiembroMesa WHERE CI = ?', [ciVotante]);
+        const esMiembroMesa = miembroRows.length > 0;
+
+        // 3. Verificar circuito y voto observado si es miembro de mesa
+        if (esMiembroMesa) {
+            // Buscar el circuito asignado al votante en VotaEn
+            const [votaEnRows] = await pool.query('SELECT Circuito FROM VotaEn WHERE VotanteCC = ?', [cc]);
+            if (votaEnRows.length === 0) {
+                return res.status(404).json({ success: false, message: 'No hay registro de circuito para este votante' });
+            }
+            const circuitoAsignado = votaEnRows[0].Circuito;
+
+            // El circuito donde está votando debe ser el mismo que el asignado
+            if (parseInt(circuito) !== parseInt(circuitoAsignado)) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Un miembro de mesa solo puede votar en el circuito donde está asignado como mesa.'
+                });
+            }
+
+            // Forzar voto observado
+            votoObservado = 1;
+        }
+
+        // 4. Verificar que no haya votado ya
         const [rows] = await pool.query('SELECT * FROM VotaEn WHERE VotanteCC = ?', [cc]);
         if (rows.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'No hay registro de circuito para este votante' 
+            return res.status(404).json({
+                success: false,
+                message: 'No hay registro de circuito para este votante'
             });
         }
-
-        // Verificamos que no haya votado ya
         if (rows[0].Se_Presento) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'El votante ya ha votado anteriormente' 
+            return res.status(400).json({
+                success: false,
+                message: 'El votante ya ha votado anteriormente'
             });
         }
 
-        // Actualizamos el estado en VotaEn
+        // 5. Actualizar el estado en VotaEn
         await pool.query(`
             UPDATE VotaEn
-            SET Se_Presento = 1, Hora_que_Voto = NOW()
+            SET Se_Presento = 1, Hora_que_Voto = NOW(), Voto_Observado = ?
             WHERE VotanteCC = ?
-        `, [cc]);
+        `, [votoObservado ? 1 : 0, cc]);
 
-        res.json({ 
-            success: true, 
+        // 6. Insertar el voto en la tabla Voto
+        await pool.query(`
+            INSERT INTO Voto (Tipo, Numero_de_Lista, Circuito)
+            VALUES (?, ?, ?)
+        `, [tipoVoto, numeroLista, circuito]);
+
+        res.json({
+            success: true,
             message: 'Votante marcado como que ya votó',
             data: {
                 cc: cc,
@@ -261,11 +297,12 @@ app.put('/api/votantes/:cc/marcar-votado', async (req, res) => {
                 fechaVoto: new Date().toISOString()
             }
         });
+
     } catch (error) {
         console.error('Error al marcar votante como votado:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Error al marcar votante como votado' 
+        res.status(500).json({
+            success: false,
+            error: 'Error al marcar votante como votado'
         });
     }
 });
@@ -341,7 +378,7 @@ app.get('/api/presidente/:ci', async (req, res) => {
 app.get('/api/votantes/:cc/verificar-circuito', async (req, res) => {
     const { cc } = req.params;
     const { circuitoPresidente } = req.query; // Circuito del presidente de mesa
-    
+
     try {
         // Buscar el votante y su circuito asignado
         const [votanteRows] = await pool.query(`
@@ -351,23 +388,23 @@ app.get('/api/votantes/:cc/verificar-circuito', async (req, res) => {
             LEFT JOIN VotaEn ve ON v.CC = ve.VotanteCC
             WHERE v.CC = ?
         `, [cc]);
-        
+
         if (votanteRows.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Votante no encontrado' 
+            return res.status(404).json({
+                success: false,
+                message: 'Votante no encontrado'
             });
         }
-        
+
         const votante = votanteRows[0];
         const circuitoAsignado = votante.CircuitoAsignado;
         const circuitoActual = parseInt(circuitoPresidente);
-        
+
         // Verificar si el votante está en el circuito correcto
         const circuitoCorrecto = circuitoAsignado === circuitoActual;
-        
-        res.json({ 
-            success: true, 
+
+        res.json({
+            success: true,
             data: {
                 votante: {
                     CC: votante.CC,
@@ -377,16 +414,16 @@ app.get('/api/votantes/:cc/verificar-circuito', async (req, res) => {
                 circuitoAsignado: circuitoAsignado,
                 circuitoActual: circuitoActual,
                 circuitoCorrecto: circuitoCorrecto,
-                mensaje: circuitoCorrecto 
-                    ? 'El votante está en el circuito correcto' 
+                mensaje: circuitoCorrecto
+                    ? 'El votante está en el circuito correcto'
                     : 'El votante NO está en el circuito correcto'
             }
         });
     } catch (error) {
         console.error('Error al verificar circuito del votante:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Error al verificar circuito del votante' 
+        res.status(500).json({
+            success: false,
+            error: 'Error al verificar circuito del votante'
         });
     }
 });
