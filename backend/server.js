@@ -391,6 +391,66 @@ app.get('/api/recuento-votos', async (req, res) => {
     }
 });
 
+// ===== ENDPOINT DE RECUENTO DE VOTOS POR CIRCUITO =====
+app.get('/api/recuento-votos-circuito', async (req, res) => {
+    try {
+        // Obtener todos los circuitos
+        const [circuitos] = await pool.query('SELECT Id FROM Circuito ORDER BY Id');
+        // Mapear números de lista a nombres de partidos (igual que en el recuento global)
+        const mapeoPartidos = {
+            1: 'PARTIDO NACIONAL',
+            2: 'CABILDO ABIERTO',
+            3: 'FRENTE AMPLIO',
+            4: 'PARTIDO COLORADO',
+            5: 'PARTIDO INDEPENDIENTE'
+        };
+        const resultado = [];
+        for (const circuito of circuitos) {
+            const circuitoId = circuito.Id;
+            // Total de votos en el circuito
+            const [totalVotosResult] = await pool.query('SELECT COUNT(*) as total FROM Voto WHERE Circuito = ?', [circuitoId]);
+            const totalVotos = totalVotosResult[0].total;
+            // Votos observados en el circuito
+            const [observadosResult] = await pool.query('SELECT COUNT(*) as total FROM Voto WHERE Circuito = ? AND Voto_Observado = 1', [circuitoId]);
+            const votosObservados = observadosResult[0].total;
+            // Votos por lista en el circuito
+            const [votosPorLista] = await pool.query(`
+                SELECT l.Numero_Lista, COUNT(v.Id) as votos
+                FROM Lista l
+                LEFT JOIN Voto v ON l.Numero_Lista = v.Numero_de_Lista AND v.Circuito = ?
+                GROUP BY l.Numero_Lista
+                ORDER BY votos DESC
+            `, [circuitoId]);
+            // Votos en blanco en el circuito
+            const [votosBlancoResult] = await pool.query('SELECT COUNT(*) as votos FROM Voto WHERE Tipo = 2 AND Circuito = ?', [circuitoId]);
+            const votosBlanco = votosBlancoResult[0].votos;
+            // Formatear resultados
+            const votosFormateados = votosPorLista.map(item => ({
+                numeroLista: item.Numero_Lista,
+                nombrePartido: mapeoPartidos[item.Numero_Lista] || `Lista ${item.Numero_Lista}`,
+                votos: item.votos
+            }));
+            if (votosBlanco > 0) {
+                votosFormateados.push({
+                    numeroLista: null,
+                    nombrePartido: 'VOTO EN BLANCO',
+                    votos: votosBlanco
+                });
+            }
+            resultado.push({
+                circuito: circuitoId,
+                votosTotales: totalVotos,
+                votosObservados: votosObservados,
+                votosPorLista: votosFormateados
+            });
+        }
+        res.json({ success: true, data: resultado, ultimaActualizacion: new Date().toISOString() });
+    } catch (error) {
+        console.error('Error al obtener recuento de votos por circuito:', error);
+        res.status(500).json({ success: false, error: 'Error al obtener recuento de votos por circuito' });
+    }
+});
+
 // ===== ENDPOINT PARA REGISTRAR VOTO =====
 
 // Registrar un voto en la tabla Voto (VOTO SECRETO)
@@ -643,6 +703,113 @@ app.get('/api/listas/:numeroLista/detalle', async (req, res) => {
     } catch (error) {
         console.error('Error al obtener detalle de lista:', error);
         res.status(500).json({ success: false, message: 'Error al obtener detalle de lista' });
+// ===== ENDPOINT PARA CONTAR VOTOS OBSERVADOS =====
+app.get('/api/votos-observados', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT COUNT(*) as total FROM Voto WHERE Voto_Observado = 1');
+        res.json({ success: true, totalVotosObservados: rows[0].total });
+    } catch (error) {
+        console.error('Error al contar votos observados:', error);
+        res.status(500).json({ success: false, error: 'Error al contar votos observados' });
+    }
+});
+
+// ===== ENDPOINT DE RECUENTO DE VOTOS POR DEPARTAMENTO Y LISTA =====
+app.get('/api/recuento-votos-departamento', async (req, res) => {
+    try {
+        // Consulta para obtener el recuento de votos por departamento y lista (sin l.Nombre)
+        const [rows] = await pool.query(`
+            SELECT d.Nombre AS departamento, l.Numero_Lista, COUNT(v.Id) AS votos
+            FROM Voto v
+            JOIN Circuito c ON v.Circuito = c.Id
+            JOIN Establecimiento e ON c.Id_Establecimiento = e.Id
+            JOIN Zona z ON e.Zona = z.Codigo_Postal
+            JOIN Departamento d ON z.Departamento = d.Nombre
+            JOIN Lista l ON v.Numero_de_Lista = l.Numero_Lista
+            GROUP BY d.Nombre, l.Numero_Lista
+            ORDER BY d.Nombre, l.Numero_Lista
+        `);
+        // Consulta para obtener votos en blanco por departamento
+        const [blancos] = await pool.query(`
+            SELECT d.Nombre AS departamento, COUNT(v.Id) AS votos_blanco
+            FROM Voto v
+            JOIN Circuito c ON v.Circuito = c.Id
+            JOIN Establecimiento e ON c.Id_Establecimiento = e.Id
+            JOIN Zona z ON e.Zona = z.Codigo_Postal
+            JOIN Departamento d ON z.Departamento = d.Nombre
+            WHERE v.Tipo = 2
+            GROUP BY d.Nombre
+        `);
+        // Agrupar por departamento
+        const resultado = {};
+        for (const row of rows) {
+            if (!resultado[row.departamento]) {
+                resultado[row.departamento] = { votosPorLista: [], votosEnBlanco: 0 };
+            }
+            resultado[row.departamento].votosPorLista.push({
+                numeroLista: row.Numero_Lista,
+                nombreLista: `Lista ${row.Numero_Lista}`,
+                votos: row.votos
+            });
+        }
+        for (const blanco of blancos) {
+            if (!resultado[blanco.departamento]) {
+                resultado[blanco.departamento] = { votosPorLista: [], votosEnBlanco: 0 };
+            }
+            resultado[blanco.departamento].votosEnBlanco = blanco.votos_blanco;
+        }
+        // Convertir a array de objetos
+        const resultadoArray = Object.entries(resultado).map(([departamento, datos]) => ({
+            departamento,
+            votosPorLista: datos.votosPorLista,
+            votosEnBlanco: datos.votosEnBlanco
+        }));
+        res.json({ success: true, data: resultadoArray });
+    } catch (error) {
+        console.error('Error al obtener recuento de votos por departamento:', error);
+        res.status(500).json({ success: false, error: 'Error al obtener recuento de votos por departamento' });
+    }
+});
+
+// Obtener la fecha/hora de fin de la elección para el presidente de mesa (por CI)
+app.get('/api/eleccion/estado/:ci', async (req, res) => {
+    const { ci } = req.params;
+    try {
+        // Buscar el presidente de mesa y su circuito
+        const [presRows] = await pool.query('SELECT * FROM Presidente_de_Mesa WHERE CI = ?', [ci]);
+        if (presRows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Presidente de mesa no encontrado' });
+        }
+        const circuitoId = presRows[0].Circuito;
+        if (!circuitoId) {
+            return res.status(400).json({ success: false, message: 'El presidente de mesa no tiene circuito asignado' });
+        }
+        // Buscar el circuito y la elección asociada
+        const [circRows] = await pool.query('SELECT * FROM Circuito WHERE Id = ?', [circuitoId]);
+        if (circRows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Circuito no encontrado' });
+        }
+        const eleccionId = circRows[0].Id_Eleccion;
+        if (!eleccionId) {
+            return res.status(400).json({ success: false, message: 'El circuito no tiene elección asociada' });
+        }
+        // Buscar la elección y su fecha/hora de fin
+        const [eleccionRows] = await pool.query('SELECT * FROM Eleccion WHERE Id = ?', [eleccionId]);
+        if (eleccionRows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Elección no encontrada' });
+        }
+        const eleccion = eleccionRows[0];
+        res.json({
+            success: true,
+            data: {
+                tipo: eleccion.Tipo,
+                fechaHoraInicio: eleccion.Fecha_Hora_Inicio,
+                fechaHoraFin: eleccion.Fecha_Hora_Fin
+            }
+        });
+    } catch (error) {
+        console.error('Error al obtener estado de la elección:', error);
+        res.status(500).json({ success: false, message: 'Error al obtener estado de la elección' });
     }
 });
 

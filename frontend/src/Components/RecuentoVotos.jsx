@@ -5,8 +5,14 @@ import "../Styles/RecuentoVotos.css";
 const RecuentoVotos = () => {
     const navigate = useNavigate();
     const [recuento, setRecuento] = useState(null);
+    const [recuentoCircuitos, setRecuentoCircuitos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [circuitosAbiertos, setCircuitosAbiertos] = useState([]);
+    const [votosObservados, setVotosObservados] = useState(null);
+    const [recuentoDepartamentos, setRecuentoDepartamentos] = useState([]);
+    const [departamentosAbiertos, setDepartamentosAbiertos] = useState([]);
+    const [todosDepartamentos, setTodosDepartamentos] = useState([]);
 
     useEffect(() => {
         cargarRecuento();
@@ -17,15 +23,43 @@ const RecuentoVotos = () => {
             setLoading(true);
             setError("");
 
-            const response = await fetch(
-                "http://localhost:5001/api/recuento-votos"
-            );
-            const data = await response.json();
+            const [resTotal, resCircuitos, resObservados, resDepartamentos, resTodosDepartamentos] = await Promise.all([
+                fetch("http://localhost:5001/api/recuento-votos"),
+                fetch("http://localhost:5001/api/recuento-votos-circuito"),
+                fetch("http://localhost:5001/api/votos-observados"),
+                fetch("http://localhost:5001/api/recuento-votos-departamento"),
+                fetch("http://localhost:5001/api/departamentos")
+            ]);
+            const dataTotal = await resTotal.json();
+            const dataCircuitos = await resCircuitos.json();
+            const dataObservados = await resObservados.json();
+            const dataDepartamentos = await resDepartamentos.json();
+            const dataTodosDepartamentos = await resTodosDepartamentos.json();
 
-            if (data.success) {
-                setRecuento(data.data);
+            if (dataTotal.success) {
+                setRecuento(dataTotal.data);
             } else {
-                setError(data.error || "Error al cargar el recuento");
+                setError(dataTotal.error || "Error al cargar el recuento");
+            }
+            if (dataCircuitos.success) {
+                setRecuentoCircuitos(dataCircuitos.data);
+            } else {
+                setError(dataCircuitos.error || "Error al cargar recuento por circuito");
+            }
+            if (dataObservados.success) {
+                setVotosObservados(dataObservados.totalVotosObservados);
+            } else {
+                setError(dataObservados.error || "Error al cargar votos observados");
+            }
+            if (dataDepartamentos.success) {
+                setRecuentoDepartamentos(dataDepartamentos.data);
+            } else {
+                setError(dataDepartamentos.error || "Error al cargar recuento por departamento");
+            }
+            if (dataTodosDepartamentos.success) {
+                setTodosDepartamentos(dataTodosDepartamentos.data.map(dep => dep.Nombre));
+            } else {
+                setError(dataTodosDepartamentos.error || "Error al cargar lista de departamentos");
             }
         } catch (error) {
             setError("Error de conexión con el servidor");
@@ -40,6 +74,22 @@ const RecuentoVotos = () => {
 
     const handleVolver = () => {
         navigate("/buscar-votante");
+    };
+
+    const toggleCircuito = (circuitoId) => {
+        setCircuitosAbiertos((prev) =>
+            prev.includes(circuitoId)
+                ? prev.filter((id) => id !== circuitoId)
+                : [...prev, circuitoId]
+        );
+    };
+
+    const toggleDepartamento = (nombre) => {
+        setDepartamentosAbiertos((prev) =>
+            prev.includes(nombre)
+                ? prev.filter((dep) => dep !== nombre)
+                : [...prev, nombre]
+        );
     };
 
     if (loading) {
@@ -102,6 +152,12 @@ const RecuentoVotos = () => {
                             {recuento?.participacion}%
                         </span>
                     </div>
+                    <div className="recuento-stat-card">
+                        <h3>Votos Observados</h3>
+                        <span className="recuento-stat-numero">
+                            {votosObservados !== null ? votosObservados.toLocaleString() : "-"}
+                        </span>
+                    </div>
                 </div>
 
                 <div className="recuento-resultados">
@@ -116,8 +172,7 @@ const RecuentoVotos = () => {
                             >
                                 <div className="recuento-partido-info">
                                     <h3 className="recuento-partido-nombre">
-                                        Lista {lista.numeroLista} -{" "}
-                                        {lista.nombrePartido}
+                                        {lista.numeroLista !== null ? lista.nombrePartido : lista.nombrePartido}
                                     </h3>
                                     <div className="recuento-partido-votos">
                                         <span className="recuento-votos-numero">
@@ -139,6 +194,107 @@ const RecuentoVotos = () => {
                             </div>
                         ))}
                     </div>
+                </div>
+
+                {/* Recuento por Circuito - Lista Expandible */}
+                <div className="recuento-circuitos">
+                    <h2 className="recuento-seccion-titulo">
+                        Recuento por Circuito
+                    </h2>
+                    {recuentoCircuitos.length === 0 && (
+                        <p>No hay datos de circuitos.</p>
+                    )}
+                    {recuentoCircuitos.map((circuito) => (
+                        <div key={circuito.circuito} className="recuento-circuito-item">
+                            <button
+                                className="recuento-circuito-btn"
+                                onClick={() => toggleCircuito(circuito.circuito)}
+                            >
+                                Circuito {circuito.circuito} - Votos Totales: {circuito.votosTotales}
+                                <span style={{ marginLeft: 24, fontWeight: 500, color: '#165bbd' }}>
+                                    Observados: {circuito.votosObservados}
+                                </span>
+                                <span style={{ marginLeft: 8 }}>
+                                    {circuitosAbiertos.includes(circuito.circuito) ? "▲" : "▼"}
+                                </span>
+                            </button>
+                            {circuitosAbiertos.includes(circuito.circuito) && (
+                                <div className="recuento-circuito-detalle">
+                                    {circuito.votosPorLista.length === 0 && (
+                                        <p>No hay votos registrados en este circuito.</p>
+                                    )}
+                                    {circuito.votosPorLista.map((lista) => (
+                                        <div key={lista.numeroLista ?? 'blanco'} className="recuento-partido-card circuito">
+                                            <div className="recuento-partido-info" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <h4 className="recuento-partido-nombre" style={{ margin: 0 }}>
+                                                    {lista.numeroLista !== null ? lista.nombrePartido : lista.nombrePartido}
+                                                </h4>
+                                                <span className="recuento-votos-numero" style={{ marginLeft: '24px', minWidth: '32px', textAlign: 'right' }}>
+                                                    {lista.votos.toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Recuento por Departamento - Lista Expandible */}
+                <div className="recuento-circuitos">
+                    <h2 className="recuento-seccion-titulo">
+                        Recuento por Departamento
+                    </h2>
+                    {todosDepartamentos.length === 0 && <p>No hay datos de departamentos.</p>}
+                    {todosDepartamentos.map((nombreDep) => {
+                        const dep = recuentoDepartamentos.find(d => d.departamento === nombreDep);
+                        const totalVotos = dep
+                            ? dep.votosPorLista.reduce((acc, l) => acc + l.votos, 0) + (dep.votosEnBlanco || 0)
+                            : 0;
+                        return (
+                            <div key={nombreDep} className="recuento-circuito-item">
+                                <button
+                                    className="recuento-circuito-btn"
+                                    onClick={() => toggleDepartamento(nombreDep)}
+                                >
+                                    {nombreDep} - Total: {totalVotos}
+                                    <span style={{ marginLeft: 8 }}>
+                                        {departamentosAbiertos.includes(nombreDep) ? "▲" : "▼"}
+                                    </span>
+                                </button>
+                                {departamentosAbiertos.includes(nombreDep) && (
+                                    <div className="recuento-circuito-detalle">
+                                        {(!dep || dep.votosPorLista.length === 0) && (
+                                            <p>Sin votos registrados en este departamento.</p>
+                                        )}
+                                        {dep && dep.votosPorLista.map((lista) => (
+                                            <div key={lista.numeroLista} className="recuento-partido-card circuito">
+                                                <div className="recuento-partido-info" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <h4 className="recuento-partido-nombre" style={{ margin: 0 }}>
+                                                        {lista.nombreLista}
+                                                    </h4>
+                                                    <span className="recuento-votos-numero" style={{ marginLeft: '24px', minWidth: '32px', textAlign: 'right' }}>
+                                                        {lista.votos.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <div className="recuento-partido-card circuito" style={{ background: '#fffbe6', border: '1.5px solid #ffe082' }}>
+                                            <div className="recuento-partido-info" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <h4 className="recuento-partido-nombre" style={{ margin: 0, color: '#b8860b' }}>
+                                                    VOTOS EN BLANCO
+                                                </h4>
+                                                <span className="recuento-votos-numero" style={{ marginLeft: '24px', minWidth: '32px', textAlign: 'right' }}>
+                                                    {dep ? (dep.votosEnBlanco?.toLocaleString() || 0) : 0}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
 
                 <div className="recuento-footer">

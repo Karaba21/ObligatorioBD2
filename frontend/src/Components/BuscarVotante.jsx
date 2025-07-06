@@ -11,6 +11,8 @@ const BuscarVotante = () => {
     const [estadoVoto, setEstadoVoto] = useState(null);
     const [circuito, setCircuito] = useState(null);
     const [verificacionCircuito, setVerificacionCircuito] = useState(null);
+    const [votacionCerrada, setVotacionCerrada] = useState(false);
+    const [fechaFinEleccion, setFechaFinEleccion] = useState(null);
 
     useEffect(() => {
         const ciPresidente = localStorage.getItem("ciPresidente");
@@ -21,6 +23,19 @@ const BuscarVotante = () => {
                     if (data.success) {
                         setCircuito(data.data.Circuito);
                         localStorage.setItem("circuito", data.data.Circuito);
+                    }
+                });
+            // Consultar estado de la elección
+            fetch(`http://localhost:5001/api/eleccion/estado/${ciPresidente}`)
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data.success && data.data.fechaHoraFin) {
+                        setFechaFinEleccion(data.data.fechaHoraFin);
+                        const ahora = new Date();
+                        const fin = new Date(data.data.fechaHoraFin);
+                        if (ahora > fin) {
+                            setVotacionCerrada(true);
+                        }
                     }
                 });
         }
@@ -146,17 +161,26 @@ const BuscarVotante = () => {
                     value={cc}
                     onChange={(e) => setCc(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    disabled={loading}
+                    disabled={loading || votacionCerrada}
                 />
                 <button
                     className="buscarvotante-btn"
                     onClick={handleBuscarVotante}
-                    disabled={loading || !cc.trim()}
+                    disabled={loading || !cc.trim() || votacionCerrada}
                 >
                     {loading ? "Buscando..." : "Buscar Votante"}
                 </button>
 
                 {error && <div className="buscarvotante-error">{error}</div>}
+
+                {votacionCerrada && (
+                    <div className="buscarvotante-error" style={{ color: 'red', marginTop: '10px' }}>
+                        La votación ha finalizado. No se pueden buscar más votantes.<br/>
+                        {fechaFinEleccion && (
+                            <span>Fin: {new Date(fechaFinEleccion).toLocaleString()}</span>
+                        )}
+                    </div>
+                )}
 
                 {votante && (
                     <div className="buscarvotante-resultado">
