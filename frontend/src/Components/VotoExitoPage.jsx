@@ -5,10 +5,11 @@ import "../Styles/VotoExitoPage.css";
 const VotoExitoPage = () => {
     const [votante, setVotante] = useState(null);
     const [seleccion, setSeleccion] = useState([]); // <-- Agregado
-    const [listas, setListas] = useState([]);       // <-- Agregado
+    const [listas, setListas] = useState([]); // <-- Agregado
     const [tipoVoto, setTipoVoto] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
+    const [votoObservado, setVotoObservado] = useState(false);
 
     useEffect(() => {
         if (!location.state?.votante) {
@@ -18,11 +19,14 @@ const VotoExitoPage = () => {
         setVotante(location.state.votante);
         setSeleccion(location.state.seleccion || []);
         setTipoVoto(location.state.tipoVoto);
+        setVotoObservado(location.state.votoObservado || false);
 
         // Cargar listas desde la base de datos
         const cargarListas = async () => {
             try {
-                const response = await fetch("http://localhost:5001/api/listas");
+                const response = await fetch(
+                    "http://localhost:5001/api/listas"
+                );
                 const data = await response.json();
 
                 if (data.success) {
@@ -48,7 +52,8 @@ const VotoExitoPage = () => {
 
     const getNombreSeleccion = () => {
         if (tipoVoto === 3) return "Voto anulado";
-        if (seleccion.length === 1 && seleccion[0] === "blanco") return "Voto en Blanco";
+        if (seleccion.length === 1 && seleccion[0] === "blanco")
+            return "Voto en Blanco";
         if (seleccion.length === 1) {
             const lista = listas.find((l) => l.id === seleccion[0]);
             return lista
@@ -77,18 +82,25 @@ const VotoExitoPage = () => {
                         </>
                     )}
                     <p>
-                        <strong>Opción seleccionada:</strong> {getNombreSeleccion()}
+                        <strong>Opción seleccionada:</strong>{" "}
+                        {getNombreSeleccion()}
                     </p>
                     <p>
-                        <strong>Hora de voto:</strong> {votante?.fechaVoto || "No disponible"}
+                        <strong>Hora de voto:</strong>{" "}
+                        {votante?.fechaVoto || "No disponible"}
                     </p>
                 </div>
+                {votoObservado && (
+                    <p style={{ color: "#c0392b", fontWeight: 700 }}>
+                        Voto Observado
+                    </p>
+                )}
                 <button className="exito-btn" onClick={handleFinalizar}>
                     Finalizar
                 </button>
             </div>
         </div>
     );
-}; 
+};
 
 export default VotoExitoPage;

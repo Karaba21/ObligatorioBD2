@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import logoNacional from "../assets/logoNacional.jpg";
 import logoFA from "../assets/logoFA.jpg";
 import logoCabildo from "../assets/logoCabildo.jpg";
+import ListaDetalleModal from "./ListaDetalleModal";
 import "../Styles/VotarPage.css";
 
 const logosPartidos = {
@@ -20,6 +21,12 @@ const VotarPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const votoObservado = location.state?.votoObservado ? 1 : 0;
+
+    const [detallesLista, setDetallesLista] = useState({});
+    const [listaExpandida, setListaExpandida] = useState(null);
+
+    const [modalAbierto, setModalAbierto] = useState(false);
+    const [detalleActual, setDetalleActual] = useState(null);
 
     useEffect(() => {
         // Obtener datos del votante desde el estado de navegación
@@ -57,6 +64,30 @@ const VotarPage = () => {
 
         cargarListas();
     }, [location.state, navigate]);
+
+    const handleVerDetalles = async (numeroLista) => {
+        if (detallesLista[numeroLista]) {
+            setDetalleActual(detallesLista[numeroLista]);
+            setModalAbierto(true);
+            return;
+        }
+        try {
+            const response = await fetch(
+                `http://localhost:5001/api/listas/${numeroLista}/detalle`
+            );
+            const data = await response.json();
+            if (data.success) {
+                setDetallesLista((prev) => ({
+                    ...prev,
+                    [numeroLista]: data.data,
+                }));
+                setDetalleActual(data.data);
+                setModalAbierto(true);
+            }
+        } catch (error) {
+            alert("Error al cargar detalles de la lista");
+        }
+    };
 
     const handleSeleccion = (id) => {
         setMensaje("");
@@ -97,7 +128,7 @@ const VotarPage = () => {
         }
 
         if (!votante) {
-            setMensaje('Error: No se encontraron datos del votante.');
+            setMensaje("Error: No se encontraron datos del votante.");
             return;
         }
 
@@ -151,13 +182,14 @@ const VotarPage = () => {
                         },
                         seleccion: seleccion,
                         tipoVoto: tipoVoto,
+                        votoObservado: votoObservado,
                     },
                 });
             } else {
-                setMensaje(data.message || 'Error al registrar el voto.');
+                setMensaje(data.message || "Error al registrar el voto.");
             }
         } catch (error) {
-            setMensaje('Error de conexión con el servidor.');
+            setMensaje("Error de conexión con el servidor.");
         }
     };
 
@@ -207,6 +239,46 @@ const VotarPage = () => {
                                         : ""
                                 }`}
                             ></div>
+                            <button
+                                className="votar-detalles-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleVerDetalles(lista.numeroLista);
+                                }}
+                            >
+                                {listaExpandida === lista.numeroLista
+                                    ? "Ocultar detalles"
+                                    : "Ver detalles"}
+                            </button>
+                            {listaExpandida === lista.numeroLista &&
+                                detallesLista[lista.numeroLista] && (
+                                    <div className="votar-lista-detalles">
+                                        <p>
+                                            <strong>Partido:</strong>{" "}
+                                            {
+                                                detallesLista[lista.numeroLista]
+                                                    .partido.nombre
+                                            }
+                                        </p>
+                                        <p>
+                                            <strong>Candidatos:</strong>
+                                        </p>
+                                        <ul>
+                                            {detallesLista[
+                                                lista.numeroLista
+                                            ].candidatos.map((c) => (
+                                                <li key={c.ci}>
+                                                    {c.nombre} -{" "}
+                                                    {c.posicion === 1
+                                                        ? "Presidente"
+                                                        : c.posicion === 2
+                                                        ? "Vice"
+                                                        : `Posición ${c.posicion}`}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                         </div>
                     ))}
                     <div
@@ -239,6 +311,12 @@ const VotarPage = () => {
                     Ingresar Voto
                 </button>
                 {mensaje && <div className="votar-mensaje">{mensaje}</div>}
+
+                <ListaDetalleModal
+                    abierto={modalAbierto}
+                    onClose={() => setModalAbierto(false)}
+                    detalles={detalleActual}
+                />
             </div>
         </div>
     );
