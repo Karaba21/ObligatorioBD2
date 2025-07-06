@@ -278,15 +278,15 @@ app.put('/api/votantes/:cc/marcar-votado', async (req, res) => {
         // 5. Actualizar el estado en VotaEn
         await pool.query(`
             UPDATE VotaEn
-            SET Se_Presento = 1, Hora_que_Voto = NOW(), Voto_Observado = ?
+            SET Se_Presento = 1, Hora_que_Voto = NOW()
             WHERE VotanteCC = ?
-        `, [votoObservado ? 1 : 0, cc]);
+        `, [cc]);
 
         // 6. Insertar el voto en la tabla Voto
         await pool.query(`
-            INSERT INTO Voto (Tipo, Numero_de_Lista, Circuito)
-            VALUES (?, ?, ?)
-        `, [tipoVoto, numeroLista, circuito]);
+            INSERT INTO Voto (Tipo, Numero_de_Lista, Circuito, Voto_Observado)
+            VALUES (?, ?, ?, ?)
+        `, [tipoVoto, numeroLista, circuito, votoObservado ? 1 : 0]);
 
         res.json({
             success: true,
@@ -594,6 +594,55 @@ app.get('/api/votantes/:cc/verificar-circuito', async (req, res) => {
             success: false,
             error: 'Error al verificar circuito del votante'
         });
+    }
+});
+
+app.get('/api/listas/:numeroLista/detalle', async (req, res) => {
+    const { numeroLista } = req.params;
+
+    try {
+        // 1. Obtener datos de la lista y su partido
+        const [listaRows] = await pool.query(`
+            SELECT l.Numero_Lista, l.Id_Partido, p.Nombre AS nombrePartido, p.Sede
+            FROM Lista l
+            JOIN Partido p ON l.Id_Partido = p.Id
+            WHERE l.Numero_Lista = ?
+        `, [numeroLista]);
+
+        if (listaRows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Lista no encontrada' });
+        }
+
+        // 2. Obtener candidatos y su posición en la lista
+        const [candidatosRows] = await pool.query(`
+            SELECT c.CI, per.Nombre, rcl.Posicion_En_Lista
+            FROM Relacion_Candidato_Lista rcl
+            JOIN Candidato c ON rcl.CI_Candidato = c.CI
+            JOIN Persona per ON c.CI = per.CI
+            WHERE rcl.Numero_Lista = ?
+            ORDER BY rcl.Posicion_En_Lista ASC
+        `, [numeroLista]);
+
+        // 3. Formatear respuesta
+        res.json({
+            success: true,
+            data: {
+                numeroLista: listaRows[0].Numero_Lista,
+                partido: {
+                    id: listaRows[0].Id_Partido,
+                    nombre: listaRows[0].nombrePartido,
+                    sede: listaRows[0].Sede
+                },
+                candidatos: candidatosRows.map(c => ({
+                    ci: c.CI,
+                    nombre: c.Nombre,
+                    posicion: c.Posicion_En_Lista
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('Error al obtener detalle de lista:', error);
+        res.status(500).json({ success: false, message: 'Error al obtener detalle de lista' });
     }
 });
 
