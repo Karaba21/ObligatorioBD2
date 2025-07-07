@@ -703,6 +703,9 @@ app.get('/api/listas/:numeroLista/detalle', async (req, res) => {
     } catch (error) {
         console.error('Error al obtener detalle de lista:', error);
         res.status(500).json({ success: false, message: 'Error al obtener detalle de lista' });
+    }
+});
+
 // ===== ENDPOINT PARA CONTAR VOTOS OBSERVADOS =====
 app.get('/api/votos-observados', async (req, res) => {
     try {
